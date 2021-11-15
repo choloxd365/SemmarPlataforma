@@ -1,7 +1,7 @@
 <?php 
 
 const SERVERURL="http://localhost/SemmarPlataforma/";
-const COMPANYNAME="SEMMAR";
+const COMPANYNAME="SEMMAR MANU";
 date_default_timezone_get();
 
 
