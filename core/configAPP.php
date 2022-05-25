@@ -1,9 +1,9 @@
 <?php 
 
-		const SERVER="localhost";
+		const SERVER="208.109.22.54";
 		const DB="semmarplataforma";
-		const USER="root";
-		const PASS="";
+		const USER="cesarxd365";
+		const PASS="bacaxd365";
 
 		const SGBD="mysql:host=".SERVER.";dbname=".DB;
 

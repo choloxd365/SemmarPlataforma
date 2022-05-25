@@ -127,7 +127,7 @@ class bancoControlador extends bancoModelo
         $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
 
-        $consulta = "SELECT SQL_CALC_FOUND_ROWS  ba.moneda_banco,ca.id_cat_banco,ba.nombre_banco,ca.nombre_cate,ca.monto_actual,
+        $consulta = "SELECT SQL_CALC_FOUND_ROWS ba.id_banco,ba.moneda_banco,ca.id_cat_banco,ba.nombre_banco,ca.nombre_cate,ca.monto_actual,
                     ca.monto_retirado from CategoriaBanco ca INNER JOIN Banco ba ON ca.id_banco=ba.id_banco;";
 
 
@@ -225,6 +225,8 @@ class bancoControlador extends bancoModelo
                    
            </td>
            <td class="text-danger font-weight-medium"> <a href="' . SERVERURL . 'pagosExternos/' . $data . '/" class="badge badge-info">Pagos</a>     
+         
+           <td class="text-danger font-weight-medium"> <a href="' . SERVERURL . 'eliminarBanco/id_banco=' . $rows["id_banco"] . '" class="badge badge-info">Eliminar</a>     
           </td>
            
         </tr>
@@ -980,14 +982,13 @@ class bancoControlador extends bancoModelo
                         "id_estado" => "5"
                     ];
                     $actualizarEstado = ordenClienteModelo::update_ordencliente_modelo($datos);
-                    
-                        $alerta = [
-                            "Alerta" => "recargar",
-                            "Titulo" => "Completado",
-                            "Texto" => "Exito al Retornar Gastos",
-                            "Tipo" => "success"
-                        ];
-                   
+
+                    $alerta = [
+                        "Alerta" => "recargar",
+                        "Titulo" => "Completado",
+                        "Texto" => "Exito al Retornar Gastos",
+                        "Tipo" => "success"
+                    ];
                 } else {
 
                     $alerta = [
@@ -1236,5 +1237,15 @@ class bancoControlador extends bancoModelo
         }
 
         return $tabla;
+    }
+    public function eliminar_banco_controlador($id)
+    {
+        bancoModelo::eliminar_banco_modelo($id);
+
+        echo '
+        <script type="text/javascript">
+           window.location.href = "'.SERVERURL.'banco/";
+        </script>';
+        header("location: ".SERVERURL."banco");
     }
 }

@@ -139,4 +139,14 @@
 		
 		
 		}
+		public static function eliminar_banco_modelo($id){
+
+			$sql=mainModel::conectar()->prepare("UPDATE banco SET estado='inactivo' WHERE id_banco=$id");
+			
+			$sql->execute();
+			return $sql;
+		
+		
+		}
+
 	}
