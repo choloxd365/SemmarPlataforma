@@ -33,6 +33,7 @@ class ordenClienteControlador extends ordenClienteModelo
         $igv_option = mainModel::limpiar_cadena($_POST['igv_option']);
         $servicio_orden = mainModel::limpiar_cadena($_POST['servicio']);
         $guia_orden = mainModel::limpiar_cadena($_POST['numero-guia']);
+        $numero_factura = mainModel::limpiar_cadena($_POST['numero-factura']);
         $id_estado_orden = mainModel::limpiar_cadena($_POST['id_estado']);
         $cantidadInputs = mainModel::limpiar_cadena($_POST['cantidadInputs']);
         // subtotal
@@ -42,7 +43,7 @@ class ordenClienteControlador extends ordenClienteModelo
 
 
 
-        $consulta = mainModel::ejecutar_consulta_simple("SELECT id_ordencli FROM OrdenCliente");
+        $consulta = mainModel::ejecutar_consulta_simple("SELECT id_ordencli FROM ordencliente");
         //numero para guardar el total de registros que hay en la bd,  que lo contamos en la consulta 4
         $numero = ($consulta->rowCount()) + 1;
 
@@ -67,6 +68,7 @@ class ordenClienteControlador extends ordenClienteModelo
             "total_ordencli" => $total_orden,
             "tipo_servicio" => $servicio_orden,
             "numero_guia" => $guia_orden,
+            "numero_factura" => $numero_factura,
             "id_estado" => $id_estado_orden,
 
         ];
@@ -124,7 +126,7 @@ class ordenClienteControlador extends ordenClienteModelo
                 }
             } else {
 
-                print_r($dataOrdenCliente);
+                print_r($dataNumOrden);
             }
             # code...
         } else {
@@ -146,22 +148,44 @@ class ordenClienteControlador extends ordenClienteModelo
         $pagina = (isset($pagina) && $pagina > 0) ? (int) $pagina : 1;
         $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
-
         if ($tipo == "busqueda" && isset($busqueda) && $busqueda != "") {
 
-            $consulta = "SELECT SQL_CALC_FOUND_ROWS igv_ordencli,ord.subtotal_ordencli,ord.total_ordencli,ord.moneda_ordencli,es.nombre_estado,ord.id_ordencli,ord.id_estado,ord.id_ordencli,pe.razon_social,pe.representante,co.id_cotcli,ord.tipo_servicio,subtotal_ordencli,total_ordencli,ord.fecha_ordencli FROM ordencliente ord INNER JOIN cotizacioncliente co ON ord.id_cotcli=co.id_cotcli INNER JOIN persona pe ON co.id_persona=pe.id_persona INNER JOIN EstadoOrdenCliente es ON ord.id_estado=es.id_estado WHERE (ord.desc_ordencli LIKE '%$busqueda%' OR pe.razon_social LIKE '%$busqueda%') and ord.id_estado!='8' ORDER BY ord.fecha_ordencli DESC LIMIT $inicio,$registros";
+            $consulta = "SELECT SQL_CALC_FOUND_ROWS *FROM ordencliente ord 
+             INNER JOIN cotizacioncliente co ON ord.id_cotcli=co.id_cotcli
+              INNER JOIN persona pe ON co.id_persona=pe.id_persona 
+              INNER JOIN estadoordencliente es ON ord.id_estado=es.id_estado
+              INNER JOIN numorden num ON ord.id_ordencli=num.id_ordencli
+              INNER JOIN detalleordencliente det ON ord.id_ordencli=det.id_ordencli
+                        
+               WHERE
+               (pe.razon_social LIKE '%$busqueda%' AND  num_orden LIKE '%$busqueda%')
+               and ord.id_estado!='1005'
+                ORDER BY ord.fecha_ordencli DESC LIMIT $inicio,$registros";
             $paginaurl = "ordenClienteList";
         } elseif ($tipo == "busquedaEmergente" && isset($busqueda) && $busqueda != "") {
 
-            $consulta = "SELECT SQL_CALC_FOUND_ROWS igv_ordencli,ord.subtotal_ordencli,ord.total_ordencli,ord.moneda_ordencli,es.nombre_estado,ord.id_ordencli,ord.id_estado,ord.id_ordencli,pe.razon_social,pe.representante,ord.tipo_servicio,subtotal_ordencli,total_ordencli,ord.fecha_ordencli FROM ordencliente ord INNER JOIN persona pe ON ord.id_persona=pe.id_persona INNER JOIN EstadoOrdenCliente es ON ord.id_estado=es.id_estado WHERE ord.id_cotcli is null and (pe.razon_social LIKE '%$busqueda%') and id_estado!='8'  ORDER BY ord.fecha_ordencli DESC LIMIT $inicio,$registros";
+            $consulta = "SELECT  SQL_CALC_FOUND_ROWS  * FROM ordencliente ord 
+                        INNER JOIN persona pe ON ord.id_persona=pe.id_persona
+                        INNER JOIN estadoordencliente es ON ord.id_estado=es.id_estado 
+                        INNER JOIN numorden num ON ord.id_ordencli=num.id_ordencli
+                        INNER JOIN detalleordencliente det ON ord.id_ordencli=det.id_ordencli
+                        WHERE ord.id_cotcli is null  and ord.id_estado!='8'and
+               (pe.razon_social LIKE '%$busqueda%' AND num_orden LIKE '%$busqueda%')
+                        GROUP BY ord.id_ordencli 
+                        
+                        ORDER BY ord.fecha_ordencli DESC LIMIT $inicio,$registros";
             $paginaurl = "ordenClienteListEmerg";
         } elseif ($tipo == "Emergente") {
 
-            $consulta = "SELECT SQL_CALC_FOUND_ROWS igv_ordencli,ord.subtotal_ordencli,ord.total_ordencli,ord.moneda_ordencli,es.nombre_estado,ord.id_ordencli,ord.id_estado,ord.id_ordencli,pe.razon_social,pe.representante,ord.tipo_servicio,subtotal_ordencli,total_ordencli,ord.fecha_ordencli FROM ordencliente ord INNER JOIN persona pe ON ord.id_persona=pe.id_persona INNER JOIN EstadoOrdenCliente es ON ord.id_estado=es.id_estado WHERE ord.id_cotcli is null and ord.id_estado!='8' ORDER BY ord.fecha_ordencli DESC LIMIT $inicio,$registros";
-            $paginaurl = "ordenClienteListEmerg";
+            $consulta = "SELECT SQL_CALC_FOUND_ROWS *FROM ordencliente ord
+                        INNER JOIN persona pe ON ord.id_persona=pe.id_persona 
+                        INNER JOIN estadoordencliente es ON ord.id_estado=es.id_estado
+                        WHERE ord.id_cotcli is null and ord.id_estado!='8'
+                        ORDER BY ord.fecha_ordencli DESC LIMIT $inicio,$registros";
+                        $paginaurl = "ordenClienteListEmerg";
         } else {
 
-            $consulta = "SELECT SQL_CALC_FOUND_ROWS igv_ordencli,ord.subtotal_ordencli,ord.total_ordencli,ord.moneda_ordencli,es.nombre_estado,ord.id_ordencli,ord.id_estado,ord.id_ordencli,pe.razon_social,pe.representante,co.id_cotcli,ord.tipo_servicio,subtotal_ordencli,total_ordencli,ord.fecha_ordencli FROM ordencliente ord INNER JOIN cotizacioncliente co ON ord.id_cotcli=co.id_cotcli INNER JOIN persona pe ON co.id_persona=pe.id_persona INNER JOIN EstadoOrdenCliente es ON ord.id_estado=es.id_estado WHERE ord.id_estado!='8' ORDER BY ord.fecha_ordencli DESC LIMIT $inicio,$registros";
+            $consulta = "SELECT SQL_CALC_FOUND_ROWS numero_factura,igv_ordencli,ord.subtotal_ordencli,ord.total_ordencli,ord.moneda_ordencli,es.nombre_estado,ord.id_ordencli,ord.id_estado,ord.id_ordencli,pe.razon_social,pe.representante,co.id_cotcli,ord.tipo_servicio,subtotal_ordencli,total_ordencli,ord.fecha_ordencli FROM ordencliente ord INNER JOIN cotizacioncliente co ON ord.id_cotcli=co.id_cotcli INNER JOIN persona pe ON co.id_persona=pe.id_persona INNER JOIN estadoordencliente es ON ord.id_estado=es.id_estado WHERE ord.id_estado!='8' ORDER BY ord.fecha_ordencli DESC LIMIT $inicio,$registros";
             $paginaurl = "ordenClienteList";
         }
 
@@ -180,27 +204,38 @@ class ordenClienteControlador extends ordenClienteModelo
 						<table class="table table-hover text-center">
 							<thead class="thead-dark bg-danger" >
                             <tr >
-                                <th style="color:#F28165;"><b>ORD. COMPRA</b></th>
+                            
+                            <th style="color:#F28165;"><b>ORD. COMPRA</b></th>
+                            <th style="color:#F28165;"><b>ID</b></th>
                                 <th style="color:#F28165;"><b>RAZON SOCIAL</b></th>
                                 <th style="color:#F28165;"><b>COTIZACION</b></th>
                                 <th style="color:#F28165;"><b>DESCRIPCION</b></th>
+                                <th style="color:#F28165;"><b>NUMERO FACTURA</b></th>
                                 <th style="color:#F28165;"><b>TIPO SERVICIO</b></th>
                                 <th style="color:#F28165;"><b>ESTADO</b></th>
-                                <th style="color:#F28165;"><b>MONEDA</b></th>
-                                <th style="color:#F28165;"><b>SUB TOTAL</b></th>';
+                                <th style="color:#F28165;"><b>MONEDA</b></th>';
+                                $sumaSubtotal = 0;
+                                $result5 = mainModel::ejecutar_consulta_simple($consulta);
+                        
+                        
+                                foreach ($result5 as $key => $rows9) {
+                                    $sumaSubtotal = $sumaSubtotal + $rows9["subtotal_ordencli"];
+                                }
+                        
+                                $tabla .= '<th style="color:#F28165;"><b>SUB TOTAL ( S/ ' . mainModel::moneyFormat($sumaSubtotal , "USD") . ')</b></th>';
         $sumaTotaligv = 0;
-        $result = mainModel::ejecutar_consulta_simple("SELECT igv_ordencli as totaligv FROM OrdenCliente");
+        $result1 = mainModel::ejecutar_consulta_simple($consulta);
 
 
-        foreach ($result as $key => $rows3) {
+        foreach ($result1 as $key => $rows3) {
             $sumaTotaligv = $sumaTotaligv + $rows3["totaligv"];
         }
 
         $sumaTotaligv2 = 0;
-        $result = mainModel::ejecutar_consulta_simple("SELECT subtotal_ordencli as subtotal_ordencli FROM OrdenCliente WHERE igv_ordencli=0");
+        $result2 = mainModel::ejecutar_consulta_simple($consulta);
 
 
-        foreach ($result as $key => $rows4) {
+        foreach ($result2 as $key => $rows4) {
             $sumaTotaligv2 = $sumaTotaligv2 + $rows4["subtotal_ordencli"] * 0.18;
         }
 
@@ -209,15 +244,15 @@ class ordenClienteControlador extends ordenClienteModelo
                                 <th style="color:#F28165;"><b>IGV ( S/ ' . mainModel::moneyFormat($sumaTotaligv + $sumaTotaligv2, "USD") . ')</b></th>';
 
         $sumaTotal = 0;
-        $result = mainModel::ejecutar_consulta_simple("SELECT total_ordencli as total,tipo_cambio_ordencli FROM OrdenCliente");
+        $result3 = mainModel::ejecutar_consulta_simple($consulta);
 
 
-        foreach ($result as $key => $rows3) {
-            $sumaTotal = $sumaTotal + ($rows3["total"]*$rows3["tipo_cambio_ordencli"]);
+        foreach ($result3 as $key => $rows3) {
+            $sumaTotal = $sumaTotal + ($rows3["total_ordencli"]*$rows3["tipo_cambio_ordencli"]);
         }
 
         $tabla .= '
-                                <th style="color:#F28165;"><b>TOTAL ( S/ ' . mainModel::moneyFormat($sumaTotal, "USD") . ')</b></th>
+                                <th style="color:#F28165;"><b>TOTAL ( S/ ' . mainModel::moneyFormat($sumaTotal+$sumaTotaligv2, "USD") . ')</b></th>
                                 <th style="color:#F28165;"><b>INVERSION</b></th>
                                 <th style="color:#F28165;"><b>FECHA ORD.</b></th>
                                 <th style="color:#F28165;"><b>DISTRIBUCION DE GASTOS</b></th>
@@ -260,11 +295,13 @@ class ordenClienteControlador extends ordenClienteModelo
 
 
 
-                $tabla .= '  <span> 
+                $tabla .= ' 
+                 <span>
+                  
                 <select  style="width:160px"  class="form-control form-control-lg">';
 
                 $id_orden = $rows['id_ordencli'];
-                $result = mainModel::ejecutar_consulta_simple("SELECT  * FROM NumOrden  WHERE id_ordencli='$id_orden'");
+                $result = mainModel::ejecutar_consulta_simple("SELECT  * FROM numorden  WHERE id_ordencli='$id_orden' ORDER BY id_numero_orden desc");
 
 
                 foreach ($result as $key => $rows2) {
@@ -276,6 +313,7 @@ class ordenClienteControlador extends ordenClienteModelo
                 $tabla .= ' </select>
                 </span>
             </td>
+            <td>' . $rows['id_ordencli'] . '</td>
             <td>' . $rows['razon_social'] . '</td>
             <td>' . $idcot . '</td>
             <td>
@@ -283,7 +321,7 @@ class ordenClienteControlador extends ordenClienteModelo
             <select  style="width:260px"  class="form-control form-control-lg">';
 
                 $idCot = $rows['id_ordencli'];
-                $result = mainModel::ejecutar_consulta_simple("SELECT  * FROM DetalleOrdenCliente WHERE id_ordencli='$idCot' ORDER BY id_det_ordencli desc ");
+                $result = mainModel::ejecutar_consulta_simple("SELECT  * FROM detalleordencliente WHERE id_ordencli='$idCot' ORDER BY id_det_ordencli desc ");
 
 
                 foreach ($result as $key => $rows2) {
@@ -298,7 +336,8 @@ class ordenClienteControlador extends ordenClienteModelo
 
                 $tabla .= '
         </td>
-            <td>' . $rows['tipo_servicio'] . '</td>
+        <td>' . $rows['numero_factura'] . '</td>
+        <td>' . $rows['tipo_servicio'] . '</td>
             <td>
                 <select id="select_estado"  name="id_estado" style="width:140px" onchange="actualizar_estado(this);" class="form-control form-control-lg">';
 
@@ -310,7 +349,7 @@ class ordenClienteControlador extends ordenClienteModelo
                     $tabla .= '<option disable selected  value="FINALIZADO">FINALIZADO</option>';
               
                 }else{
-                    $result = mainModel::ejecutar_consulta_simple("SELECT * FROM EstadoOrdenCliente WHERE id_estado!='$id_estado' and ( id_estado!=4 AND id_estado!=5 AND id_estado!=6 AND id_estado!=7)  ORDER BY id_estado ");
+                    $result = mainModel::ejecutar_consulta_simple("SELECT * FROM estadoordencliente WHERE id_estado!='$id_estado' and ( id_estado!=4 AND id_estado!=5 AND id_estado!=6 AND id_estado!=7 AND id_estado!=8 AND id_estado!=1005)  ORDER BY id_estado ");
 
                     $tabla .= '<option selected  value="' . $rows['id_estado'] . '">' . $rows["nombre_estado"] . '</option>';
 
@@ -334,11 +373,11 @@ class ordenClienteControlador extends ordenClienteModelo
                 }
 
 
-                $tabla .= '<td>' . mainModel::moneyFormat($rows['total_ordencli'], "USD") . '</td>';
+                $tabla .= '<td>' . mainModel::moneyFormat($rows['total_ordencli']+$rows['subtotal_ordencli'] * 0.18, "USD") . '</td>';
 
                 $id_orden = $rows['id_ordencli'];
                 $montoGastado = 0;
-                $result = mainModel::ejecutar_consulta_simple("SELECT precio_dis  FROM DistribucionCostos WHERE id_ordencli ='$id_orden'");
+                $result = mainModel::ejecutar_consulta_simple("SELECT precio_dis  FROM distribucioncostos WHERE id_ordencli ='$id_orden'");
 
 
                 foreach ($result as $key => $rows5) {
@@ -363,7 +402,8 @@ class ordenClienteControlador extends ordenClienteModelo
             <input class="btn btn-inverse-danger" type="submit" value="Eliminar" >
             </form>
             <div class="RespuestaAjax" id="RespuestaAjax">
-            </div>';
+            </div>
+            </td>';
 
 
                 $contador++;
@@ -524,22 +564,21 @@ class ordenClienteControlador extends ordenClienteModelo
             "id_estado" => $id_estado
         ];
         $actualizarEstado = ordenClienteModelo::update_ordencliente_modelo($datos);
-        if ($id_estado==7) {
+        if ($actualizarEstado->rowCount()>=1) {
             # code.if ($ejecutarConsulta->rowCount()>=1) {
             $alerta = [
                 "Alerta" => "simple",
                 "Titulo" => "Completado",
-                "Texto" => "Exito al finalizar Orden.",
+                "Texto" => "Exito al actualizar estado.",
                 "Tipo" => "success"
 
             ];
-        }elseif($id_estado==6){
+        }else{
             $alerta = [
                 "Alerta" => "simple",
-                "Titulo" => "Espera",
-                "Texto" => "La orden aun no se finaliza...",
-                "Tipo" => "success"
-
+                "Titulo" => "Algo salió mal",
+                "Texto" => "No se pudo actualizar...",
+                "Tipo" => "error"
             ];
         }
         return mainModel::sweet_alert($alerta);
@@ -604,16 +643,18 @@ class ordenClienteControlador extends ordenClienteModelo
         $id_ordenes = json_decode($decodificar, true);
         $cantidad = count($id_ordenes);
         $contador = 0;
+        $totalOrdenes=0;
         for ($i = 0; $i < $cantidad; $i++) {
             $contador++;
             $tabla = '';
             $result = mainModel::ejecutar_consulta_simple("SELECT  * FROM ordencliente ord
-             INNER JOIN DetalleOrdenCliente det on ord.id_ordencli=det.id_ordencli  
+             INNER JOIN detalleordencliente det on ord.id_ordencli=det.id_ordencli  
              WHERE ord.id_ordencli ='$id_ordenes[$i]';");
             $total=0;
             while ($row = $result->fetch()) {
                 $total=$total+$row["total_ordencli"];
                 $contador++;
+                $idOrd=$id_ordenes[$i];
                 $tabla .= '
                 <section id="' . $contador . '">
                 <div class="form-row">
@@ -623,16 +664,37 @@ class ordenClienteControlador extends ordenClienteModelo
                         <input type="Text" value="' . $row["id_ordencli"] . '" name="id_ordenes_union_orden[]" class="form-control"  placeholder="Numero de Orden">
                     </div>
                     <div class="form-group col-4">
-                        <label for="inputEmail4" style="color:#F28165;"><b>DESCRIPCION</b></label>
-                        <input type="Text" value="' . $row["desc_det_ordencli"] . '" name="holaquetal" class="form-control"  placeholder="Descripcion">
-                    </div>
+                    
+                    <label for="inputEmail4" style="color:#F28165;"><b>Descripcion</b></label>
+                    <select  class="form-control form-control-lg">';
+
+                    $idCot = $row['id_ordencli'];
+                    $total_detalle=0;
+                    $result = mainModel::ejecutar_consulta_simple("SELECT  * FROM detalleordencliente WHERE id_ordencli='$idOrd' ORDER BY id_det_ordencli desc ");
+    
+    
+                    foreach ($result as $key => $rows2) {
+    
+                        $total_detalle=$total_detalle+$rows2['precio_det_ordencli'];
+    
+                        $tabla .= '<option >' . $rows2["desc_det_ordencli"] . ' (' . $rows2["precio_det_ordencli"] . ')</option>
+                    ';
+                    }
+                    $tabla .= ' </select>
+                ';
+    
+                    $totalOrdenes=$totalOrdenes+$total_detalle;
+                    $tabla .= '
+             </div>
                     <div class="form-group col-2">
                         <label for="inputEmail4" style="color:#F28165;"><b>MONTO</b></label>
-                        <input name="monto_orden_uni[]"  type="number"  value="' . $row["total_ordencli"] . '"  class="form-control"  placeholder="0.00">
-                    </div>
+                    <select  class="form-control form-control-lg">
+                    <option>' . $total_detalle. '</option>
+                    </select>
+                        </div>
                     <div class="form-group col-2">
                         <label for="inputEmail4" style="color:#F28165;"><b>QUITAR</b></label>
-                        <button class="btn btn-outline-primary btn-rounded mdi mdi-delete" type="button"  onclick="eliminar(' . $contador . ')"></button>
+                        <button class="btn btn-outline-primary btn-rounded mdi mdi-delete form-control " type="button"  onclick="eliminar(' . $contador . ')"></button>
                     </div>
                 </div>
                 </section>';
@@ -640,7 +702,12 @@ class ordenClienteControlador extends ordenClienteModelo
 
             print($tabla);
         }
-        echo ' <script>
+        echo ' 
+        <div class="form-group col-6">
+            <label for="inputEmail4" style="color:#F28165;"><b>MONTO TOTAL</b></label>
+        
+            <input class="form-control" name="cantidadInputs" type="Text" value="' . $totalOrdenes . '"> 
+            </div><script>
         document.addEventListener("DOMContentLoaded", function() {
           sumarTotalesOrdenes();
         });
@@ -662,11 +729,12 @@ class ordenClienteControlador extends ordenClienteModelo
         $subtotal_orden = mainModel::limpiar_cadena($_POST['precio_union_orden']);
         $total_orden = mainModel::limpiar_cadena($_POST['precio_union_orden']);
         $guia_orden = mainModel::limpiar_cadena($_POST['guia_union_orden']);
+        $numero_factura = mainModel::limpiar_cadena($_POST['numero_factura']);
         $cantidadInputs = mainModel::limpiar_cadena($_POST['cantidadInputs']);
 
 
 
-        $consulta = mainModel::ejecutar_consulta_simple("SELECT id_ordencli FROM OrdenCliente");
+        $consulta = mainModel::ejecutar_consulta_simple("SELECT id_ordencli FROM ordencliente");
         //numero para guardar el total de registros que hay en la bd,  que lo contamos en la consulta 4
         $numero = ($consulta->rowCount()) + 1;
 
@@ -684,15 +752,32 @@ class ordenClienteControlador extends ordenClienteModelo
             "subtotal_ordencli" => $subtotal_orden,
             "igv_ordencli" => 0,
             "total_ordencli" => $total_orden,
-            "tipo_servicio" => 'Fabricacion',
+            "tipo_servicio" => 'FABRICACION',
             "numero_guia" => $guia_orden,
+            "numero_factura" => $numero_factura,
             "id_estado" => 1
 
         ];
 
 
         $guardarOrdenCliente = ordenClienteModelo::agregar_orden_cliente_modelo($dataOrdenCliente);
-        if ($guardarOrdenCliente->rowCount() >= 1) {
+        
+
+
+        $datosDetalleOrdCli = [
+
+            "id_ordencli" => $codigo,
+            "desc_det_ordencli" => $desc_orden,
+            "unidad_det_ordencli" => "UNIDAD",
+            "cantidad_det_ordencli" => 1,
+            "precio_det_ordencli" => $precio_orden
+
+        ];
+
+        $guardarDetalleOrdenCliente = ordenClienteModelo::agregar_detalle_orden_cliente_modelo($datosDetalleOrdCli);
+
+
+        if ($guardarDetalleOrdenCliente->rowCount() >= 1) {
 
             $dataNumOrden = [
 
@@ -705,87 +790,63 @@ class ordenClienteControlador extends ordenClienteModelo
 
                 for ($i = 0; $i < $cantidadInputs; $i++) {
 
+                    $datosUpdateDetalle = [
+                        "id_ordencli" => $codigo,
+                        "id_ordencli_antigua" => $id_ordenes_antiguas[$i]
+                    ];
+                    $eliminar_orden = ordenClienteModelo::update_detalle_orden_modelo($datosUpdateDetalle);
+                    $eliminar_detalle_orden = ordenClienteModelo::delete_orden_modelo($id_ordenes_antiguas[$i]);
+
 
                     $datosNumeroOrden = [
                         "id_ordencli" => $codigo,
                         "id_ordencli_antigua" => $id_ordenes_antiguas[$i]
                     ];
                     $updateNroOrden = ordenClienteModelo::update_numero_orden_modelo($datosNumeroOrden);
-                }
+                    
 
-                for ($i = 0; $i < $cantidadInputs; $i++) {
-
-
-                    $datosTransacciones = [
-                        "id_ordencli" => $codigo,
-                        "id_ordencli_antigua" => $id_ordenes_antiguas[$i]
-                    ];
-                    $DistribucionUp = bancoModelo::update_id_orden_transaccion_modelo($datosTransacciones);
-                }
-
-
-
-                $datosDetalleOrdCli = [
-
-                    "id_ordencli" => $codigo,
-                    "desc_det_ordencli" => $desc_orden,
-                    "unidad_det_ordencli" => "UNIDAD",
-                    "cantidad_det_ordencli" => 1,
-                    "precio_det_ordencli" => $precio_orden
-
-                ];
-
-                $guardarDetalleOrdenCliente = ordenClienteModelo::agregar_detalle_orden_cliente_modelo($datosDetalleOrdCli);
-
-
-
-                for ($i = 0; $i < $cantidadInputs; $i++) {
-
-
+                    $id_ordenes=$id_ordenes_antiguas[$i];
+                    $consulta = mainModel::ejecutar_consulta_simple("SELECT id_dis FROM distribucioncostos WHERE id_ordencli='$id_ordenes'");
+                    if ($consulta->rowCount()>=1) {
+                        
                     $datos = [
                         "id_ordencli" => $codigo,
                         "id_ordencli_antigua" => $id_ordenes_antiguas[$i]
                     ];
                     $DistribucionUp = distribucionModelo::unir_distribucion_modelo($datos);
-                }
-
-                for ($i = 0; $i < $cantidadInputs; $i++) {
-
-                    $datosUpdateDetalle = [
+                    
+                    $datosTransacciones = [
                         "id_ordencli" => $codigo,
                         "id_ordencli_antigua" => $id_ordenes_antiguas[$i]
                     ];
-                    $eliminar_orden = ordenClienteModelo::update_detalle_orden_modelo($datosUpdateDetalle);
-                }
+                    $DistribucionUp = bancoModelo::update_id_orden_transaccion_modelo($datosTransacciones);
 
+                    }else{
 
-
-                for ($i = 0; $i < $cantidadInputs; $i++) {
-                    $eliminar_detalle_orden = ordenClienteModelo::delete_orden_modelo($id_ordenes_antiguas[$i]);
-
-                    if ($eliminar_detalle_orden >= 1) {
-                        $alerta = [
-                            "Alerta" => "recargar",
-                            "Titulo" => "Completado",
-                            "Texto" => "Exito al registrar orden",
-                            "Tipo" => "success"
-
-                        ];
                     }
+                 
+
                 }
+
+
+
+
+                
             } else {
 
                 $alerta = [
                     "Alerta" => "simple",
                     "Titulo" => "Algo salió mal",
-                    "Texto" => "No se pudo agregar Gasto. ¡Ups!",
+                    "Texto" => "No se pudo unir ordenes. ¡Ups!",
                     "Tipo" => "error"
                 ];
             }
         }
+        
+          
 
 
-        return mainModel::sweet_alert($alerta);
+        return "HOLA";
     }
 
     
@@ -795,6 +856,7 @@ class ordenClienteControlador extends ordenClienteModelo
         $tipo_servicio_up = mainModel::limpiar_cadena($_POST['tipo_servicio_up']);
         $id_estado_up = mainModel::limpiar_cadena($_POST['id_estado_upp']);
         $numero_guia_up = mainModel::limpiar_cadena($_POST['numero_guia_up']);
+        $numero_factura_up = mainModel::limpiar_cadena($_POST['numero_factura_up']);
         $sub_total_up = mainModel::limpiar_cadena($_POST['sub_total_up']);
         $igv_up = mainModel::limpiar_cadena($_POST['igv_up']);
         $total_up = mainModel::limpiar_cadena($_POST['total_up']);
@@ -808,6 +870,7 @@ class ordenClienteControlador extends ordenClienteModelo
             "igv_ordencli"=>$igv_up,
             "tipo_servicio"=>$tipo_servicio_up,
             "numero_guia"=>$numero_guia_up,
+            "numero_factura"=>$numero_factura_up,
             "moneda_ordencli"=>$moneda_up,
             "tipo_cambio_ordencli"=>$tipo_cambio_up,
             "id_estado"=>$id_estado_up,
@@ -833,29 +896,11 @@ class ordenClienteControlador extends ordenClienteModelo
         }
         return mainModel::sweet_alert($alerta);
     }
-    
     public static function eliminar_orden_cliente_controlador($id)
     {
 
         $eliminarProveedor = ordenClienteModelo::delete_orden_modelo($id);
 
-        if ($eliminarProveedor->rowCount() >= 1) {
-            $alerta = [
-                "Alerta" => "recargar",
-                "Titulo" => "Usuario Eliminado",
-                "Texto" => "La orden fue eliminada correctamente ",
-                "Tipo" => "success"
-            ];
-        } else {
-            $alerta = [
-                "Alerta" => "simple",
-                "Titulo" => "Algo salió mal",
-                "Texto" => "No se pudo eliminar la orden",
-                "Tipo" => "error"
-            ];
-        }
-
-
-        return mainModel::sweet_alert($alerta);
+        header('Location: '.SERVERURL.'ordenClienteListEmerg/');
     }
 }

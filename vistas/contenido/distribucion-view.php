@@ -183,7 +183,7 @@
                     ?>
                     <select name='id-cat_banco-reg' class='custom-select'>
                       <?php
-                      $result = mainModel::ejecutar_consulta_simple("SELECT * FROM CategoriaBanco  ca INNER JOIN Banco ba on ca.id_banco=ba.id_banco");
+                      $result = mainModel::ejecutar_consulta_simple("SELECT * FROM categoriabanco  ca INNER JOIN banco ba on ca.id_banco=ba.id_banco WHERE ca.estado='activo'");
 
                       foreach ($result as $key => $rows) {
                         $moneda = $rows["moneda_banco"];

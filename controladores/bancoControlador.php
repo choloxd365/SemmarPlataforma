@@ -127,9 +127,10 @@ class bancoControlador extends bancoModelo
         $inicio = ($pagina > 0) ? (($pagina * $registros) - $registros) : 0;
 
 
-        $consulta = "SELECT SQL_CALC_FOUND_ROWS ba.id_banco,ba.moneda_banco,ca.id_cat_banco,ba.nombre_banco,ca.nombre_cate,ca.monto_actual,
-                    ca.monto_retirado from CategoriaBanco ca INNER JOIN Banco ba ON ca.id_banco=ba.id_banco;";
-
+$consulta = "SELECT SQL_CALC_FOUND_ROWS ba.id_banco,ba.moneda_banco,ca.id_cat_banco,
+ba.nombre_banco,ca.nombre_cate,ca.monto_actual, ca.monto_retirado from
+categoriabanco ca INNER JOIN banco ba ON ca.id_banco=ba.id_banco WHERE
+ca.estado ='activo';";
 
 
         $conexion = mainModel::conectar();
@@ -226,7 +227,7 @@ class bancoControlador extends bancoModelo
            </td>
            <td class="text-danger font-weight-medium"> <a href="' . SERVERURL . 'pagosExternos/' . $data . '/" class="badge badge-info">Pagos</a>     
          
-           <td class="text-danger font-weight-medium"> <a href="' . SERVERURL . 'eliminarBanco/id_banco=' . $rows["id_banco"] . '" class="badge badge-info">Eliminar</a>     
+           <td class="text-danger font-weight-medium"> <a href="' . SERVERURL . 'eliminarBanco/id_banco=' . $rows["id_cat_banco"] . '" class="badge badge-info">Eliminar</a>     
           </td>
            
         </tr>
